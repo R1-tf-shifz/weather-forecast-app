@@ -38,21 +38,9 @@ impl ForecastParamaters {
 
 #[derive(Deserialize, Debug)]
 struct OpenMeteoResponse {
-    latitude: f32,
-    longitude: f32,
-    generationtime_ms: f32,
     utc_offset_seconds: i32,
     timezone: String,
-    timezone_abbreviation: String,
-    elevation: f32,
-    hourly_units: HourlyUnits,
     hourly: Hourly,
-}
-
-#[derive(Deserialize, Debug)]
-struct HourlyUnits {
-    time: String,
-    temperature_2m: String,
 }
 
 #[derive(Deserialize, Debug)]

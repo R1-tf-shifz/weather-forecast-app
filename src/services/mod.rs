@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-mod open_meteo_service;
+pub mod open_meteo_service;
+pub mod visual_crossing_service;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ForecastRequest {
@@ -13,7 +14,7 @@ pub struct ForecastRequest {
 }
 
 impl ForecastRequest {
-    fn new(
+    pub fn new(
         location: Location,
         forecast_days: u8,
         api_key: Option<String>,
@@ -34,8 +35,8 @@ pub type WeatherForecast = Vec<WeatherPoint>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WeatherPoint {
-    timestamp: u64,
-    temperature: f32,
+    pub timestamp: u64,
+    pub temperature: f32,
 }
 
 impl WeatherPoint {
@@ -54,7 +55,7 @@ pub struct Location {
 }
 
 impl Location {
-    fn new(latitude: f32, longitude: f32) -> Self {
+    pub fn new(latitude: f32, longitude: f32) -> Self {
         Self {
             latitude,
             longitude,
