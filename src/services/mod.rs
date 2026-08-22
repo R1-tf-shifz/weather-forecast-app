@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 mod open_meteo_service;
 
@@ -29,12 +30,20 @@ impl ForecastRequest {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WeatherForecast {}
+pub type WeatherForecast = Vec<WeatherPoint>;
 
-impl WeatherForecast {
-    fn new() -> Self {
-        Self {}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WeatherPoint {
+    timestamp: u64,
+    temperature: f32,
+}
+
+impl WeatherPoint {
+    pub fn new(timestamp: u64, temperature: f32) -> Self {
+        Self {
+            timestamp,
+            temperature,
+        }
     }
 }
 
@@ -59,12 +68,32 @@ pub enum TemperatureUnit {
     Celsius,
 }
 
+impl fmt::Display for TemperatureUnit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let result = match self {
+            TemperatureUnit::Fahrenheit => String::from("fahrenheit"),
+            TemperatureUnit::Celsius => String::from("celsius"),
+        };
+        write!(f, "{result}")
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum WindUnit {
     Ms,
     Mph,
 }
 
+impl fmt::Display for WindUnit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let result = match self {
+            WindUnit::Ms => String::from("ms"),
+            WindUnit::Mph => String::from("mph"),
+        };
+        write!(f, "{result}")
+    }
+}
+
 pub trait WeatherForecastService {
-    fn forecast(request: ForecastRequest) -> Option<WeatherForecast>;
+    async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
 }
