@@ -37,13 +37,15 @@ pub type WeatherForecast = Vec<WeatherPoint>;
 pub struct WeatherPoint {
     pub timestamp: u64,
     pub temperature: f32,
+    pub relative_temperature: f32,
 }
 
 impl WeatherPoint {
-    pub fn new(timestamp: u64, temperature: f32) -> Self {
+    pub fn new(timestamp: u64, temperature: f32, relative_temperature: f32) -> Self {
         Self {
             timestamp,
             temperature,
+            relative_temperature,
         }
     }
 }
@@ -79,6 +81,12 @@ impl fmt::Display for TemperatureUnit {
     }
 }
 
+impl Default for TemperatureUnit {
+    fn default() -> Self {
+        TemperatureUnit::Celsius
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum WindUnit {
     Ms,
@@ -92,6 +100,12 @@ impl fmt::Display for WindUnit {
             WindUnit::Mph => String::from("mph"),
         };
         write!(f, "{result}")
+    }
+}
+
+impl Default for WindUnit {
+    fn default() -> Self {
+        WindUnit::Ms
     }
 }
 

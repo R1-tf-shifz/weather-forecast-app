@@ -1,22 +1,92 @@
 use super::*;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::env;
 
 const BASE_URL: &str =
     "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
+const DEFAULT_INCLUDE: &str = "current,hours";
 
-pub struct visual_crossing_service<'a> {
+#[derive(Serialize, Deserialize)]
+struct ForecastParameters {
+    key: String,
+    #[serde(rename = "unitGroup")]
+    unit_group: String,
+    include: String,
+}
+
+impl ForecastParameters {
+    fn from_forecast_request(request: ForecastRequest) -> Self {
+        let unitGroup = match request.temperature_unit.unwrap_or_default() {
+            TemperatureUnit::Celsius => "metric",
+            TemperatureUnit::Fahrenheit => "us",
+        };
+        ForecastParameters {
+            key: request.api_key.expect("key must be configured"),
+            unit_group: unitGroup.to_string(),
+            include: DEFAULT_INCLUDE.to_string(),
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+struct VisualCrossingResponse {
+    pub days: Vec<Day>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Day {
+    pub hours: Vec<Hour>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Hour {
+    pub datetimeEpoch: u64,
+    pub temp: f32,
+    pub feelslike: f32,
+}
+
+pub struct VisualCrossingService<'a> {
     pub client: &'a Client,
     pub api_key: String,
 }
 
-impl<'a> visual_crossing_service<'a> {
+impl<'a> VisualCrossingService<'a> {
     pub fn new(client: &'a Client, api_key: String) -> Self {
         Self { client, api_key }
     }
 
-    pub fn build_url(location: Location) -> String {
-        format!("{}/{},{}", BASE_URL, location.latitude, location.longitude)
+    fn build_url(request: &ForecastRequest) -> String {
+        let days = (request.forecast_days - 1).clamp(0, u8::MAX);
+        format!(
+            "{}/{},{}/next{}days",
+            BASE_URL, request.location.latitude, request.location.longitude, days
+        )
+    }
+
+    async fn send_request(&self, mut request: ForecastRequest) -> Option<reqwest::Response> {
+        let url = VisualCrossingService::build_url(&request);
+        request.api_key = Some(self.api_key.clone());
+        let parameters = ForecastParameters::from_forecast_request(request);
+        self.client.get(url).query(&parameters).send().await.ok()
+    }
+}
+
+impl<'a> WeatherForecastService for VisualCrossingService<'a> {
+    async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast> {
+        let api_response = self.send_request(request).await?;
+        let json = api_response.json::<VisualCrossingResponse>().await.ok()?;
+        let mut result = WeatherForecast::new();
+
+        for day in json.days.into_iter() {
+            for hour in day.hours.into_iter() {
+                let weather_point =
+                    WeatherPoint::new(hour.datetimeEpoch, hour.temp, hour.feelslike);
+                result.push(weather_point);
+            }
+        }
+
+        Some(result)
     }
 }
 
@@ -27,11 +97,38 @@ mod tests {
     #[test]
     fn check_base_url_builder() {
         let location = Location::new(55.7558, 37.6173);
-        let final_url = visual_crossing_service::build_url(location);
-        let test = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/55.7558,37.6173";
+        let parameters = ForecastRequest::new(location, 1, None, None, None);
+        let final_url = VisualCrossingService::build_url(&parameters);
+        let test = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/55.7558,37.6173/next0days";
         assert_eq!(final_url, test);
     }
 
     #[test]
-    fn check_final_url() {}
+    fn check_final_url() {
+        let test_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/55.7558,37.6173/next0days?key=my_api_key&unitGroup=metric&include=current%2Chours";
+        let location = Location::new(55.7558, 37.6173);
+        let api_key = "my_api_key".to_string();
+        let parameters = ForecastRequest::new(location, 1, Some(api_key), None, None);
+        let url = VisualCrossingService::build_url(&parameters);
+        let parameters = ForecastParameters::from_forecast_request(parameters);
+        let client = Client::new();
+        let final_url = client
+            .get(url)
+            .query(&parameters)
+            .build()
+            .expect("must work");
+        assert_eq!(final_url.url().to_string(), test_url);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn is_api_works() {
+        let location = Location::new(55.7558, 37.6173);
+        let api_key = env::var("VISUAL_CROSSING_API_KEY").expect("key must be in env");
+        let request = ForecastRequest::new(location, 1, None, None, None);
+        let client = Client::new();
+        let visual_crossing_service = VisualCrossingService::new(&client, api_key);
+        let result = visual_crossing_service.forecast(request).await;
+        assert!(result.is_some());
+    }
 }
