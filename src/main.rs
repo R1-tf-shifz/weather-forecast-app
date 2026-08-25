@@ -1,6 +1,7 @@
 use reqwest::Client;
 use std::time::Duration;
 
+mod orchestrator;
 mod services;
 
 #[tokio::main]

@@ -87,6 +87,8 @@ impl<'a> WeatherForecastService for OpenMeteoService<'a> {
 
         Some(result)
     }
+
+    fn change_api_key(&mut self, _: String) {}
 }
 
 #[cfg(test)]

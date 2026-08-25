@@ -65,9 +65,10 @@ impl Location {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum TemperatureUnit {
     Fahrenheit,
+    #[default]
     Celsius,
 }
 
@@ -81,14 +82,9 @@ impl fmt::Display for TemperatureUnit {
     }
 }
 
-impl Default for TemperatureUnit {
-    fn default() -> Self {
-        TemperatureUnit::Celsius
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum WindUnit {
+    #[default]
     Ms,
     Mph,
 }
@@ -103,12 +99,8 @@ impl fmt::Display for WindUnit {
     }
 }
 
-impl Default for WindUnit {
-    fn default() -> Self {
-        WindUnit::Ms
-    }
-}
-
 pub trait WeatherForecastService {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
+
+    fn change_api_key(&mut self, api_key: String);
 }
