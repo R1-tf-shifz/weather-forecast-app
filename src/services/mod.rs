@@ -127,6 +127,7 @@ impl fmt::Display for WindUnit {
     }
 }
 
+#[async_trait::async_trait]
 pub trait WeatherForecastService {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
 }

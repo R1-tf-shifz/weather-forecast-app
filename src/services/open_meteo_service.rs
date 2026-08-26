@@ -70,6 +70,7 @@ impl<'a> OpenMeteoService<'a> {
     }
 }
 
+#[async_trait::async_trait]
 impl<'a> WeatherForecastService for OpenMeteoService<'a> {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast> {
         let api_response = self.send_request(request).await?;

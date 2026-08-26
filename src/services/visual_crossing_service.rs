@@ -72,6 +72,7 @@ impl<'a> VisualCrossingService<'a> {
     }
 }
 
+#[async_trait::async_trait]
 impl<'a> WeatherForecastService for VisualCrossingService<'a> {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast> {
         let api_response = self.send_request(request).await?;
