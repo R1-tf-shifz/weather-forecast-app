@@ -48,7 +48,7 @@ struct Hour {
 
 pub struct VisualCrossingService<'a> {
     pub client: &'a Client,
-    api_key: String,
+    pub api_key: String,
 }
 
 impl<'a> VisualCrossingService<'a> {
@@ -87,10 +87,6 @@ impl<'a> WeatherForecastService for VisualCrossingService<'a> {
         }
 
         Some(result)
-    }
-
-    fn change_api_key(&mut self, api_key: String) {
-        self.api_key = api_key;
     }
 }
 

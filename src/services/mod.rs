@@ -1,8 +1,36 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+use crate::services::{
+    open_meteo_service::OpenMeteoService, visual_crossing_service::VisualCrossingService,
+};
+
 pub mod open_meteo_service;
 pub mod visual_crossing_service;
+
+pub enum ForecastService<'a> {
+    VisualCrossing(VisualCrossingService<'a>),
+    OpenMeteo(OpenMeteoService<'a>),
+}
+
+impl<'a> ForecastService<'a> {
+    pub fn change_api_key(&mut self, key: String) {
+        match self {
+            Self::VisualCrossing(service) => service.api_key = key,
+            Self::OpenMeteo(_) => (),
+        }
+    }
+}
+
+impl<'a> fmt::Display for ForecastService<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let result = match self {
+            Self::VisualCrossing(_) => "VisualCrossing".to_string(),
+            Self::OpenMeteo(_) => "OpenMeteo".to_string(),
+        };
+        write!(f, "{result}")
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ForecastRequest {
@@ -101,6 +129,4 @@ impl fmt::Display for WindUnit {
 
 pub trait WeatherForecastService {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
-
-    fn change_api_key(&mut self, api_key: String);
 }
