@@ -1,38 +1,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::services::{
-    open_meteo_service::OpenMeteoService, visual_crossing_service::VisualCrossingService,
-};
-
 pub mod open_meteo_service;
 pub mod visual_crossing_service;
 
-pub enum ForecastService<'a> {
-    VisualCrossing(VisualCrossingService<'a>),
-    OpenMeteo(OpenMeteoService<'a>),
+#[derive(Eq, Hash, PartialEq)]
+pub enum ForecastService {
+    VisualCrossing,
+    OpenMeteo,
 }
 
-impl<'a> ForecastService<'a> {
-    pub fn change_api_key(&mut self, key: String) {
-        match self {
-            Self::VisualCrossing(service) => service.api_key = key,
-            Self::OpenMeteo(_) => (),
-        }
-    }
-}
-
-impl<'a> fmt::Display for ForecastService<'a> {
+impl fmt::Display for ForecastService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let result = match self {
-            Self::VisualCrossing(_) => "VisualCrossing".to_string(),
-            Self::OpenMeteo(_) => "OpenMeteo".to_string(),
+            Self::VisualCrossing => "VisualCrossing".to_string(),
+            Self::OpenMeteo => "OpenMeteo".to_string(),
         };
         write!(f, "{result}")
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ForecastRequest {
     pub location: Location,
     pub forecast_days: u8,
@@ -78,7 +66,7 @@ impl WeatherPoint {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Location {
     pub latitude: f32,
     pub longitude: f32,
@@ -93,7 +81,7 @@ impl Location {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub enum TemperatureUnit {
     Fahrenheit,
     #[default]
@@ -110,7 +98,7 @@ impl fmt::Display for TemperatureUnit {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub enum WindUnit {
     #[default]
     Ms,
@@ -130,4 +118,8 @@ impl fmt::Display for WindUnit {
 #[async_trait::async_trait]
 pub trait WeatherForecastService {
     async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
+
+    fn which_service(&self) -> ForecastService;
+
+    fn change_api_key(&mut self, key: String);
 }

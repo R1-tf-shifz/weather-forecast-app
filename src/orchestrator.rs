@@ -1,46 +1,67 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    thread,
+};
 
+use futures::{StreamExt, stream};
 use reqwest::Client;
 
 use crate::services::{
-    ForecastService, WeatherForecastService, open_meteo_service::OpenMeteoService,
+    ForecastRequest, ForecastService, WeatherForecast, WeatherForecastService,
+    open_meteo_service::OpenMeteoService,
 };
 
-pub struct Orchestrator<'a> {
-    services: HashMap<String, ForecastService<'a>>,
+pub struct Orchestrator {
+    services: HashMap<ForecastService, Box<dyn WeatherForecastService>>,
     client: Client,
 }
 
-impl<'a> Orchestrator<'a> {
-    pub fn new(client: Client) -> Self {
-        let services: HashMap<String, ForecastService<'a>> = HashMap::new();
+impl Orchestrator {
+    pub fn new() -> Self {
+        let client = Client::new();
         let services = HashMap::new();
         Self { client, services }
     }
 
-    pub fn initialize(&'a mut self) {
-        let open_meteo_service = OpenMeteoService::new(&self.client);
-        let service = ForecastService::OpenMeteo(open_meteo_service);
-        self.services.insert(service.to_string(), service);
+    pub fn add_service(&mut self, service: Box<dyn WeatherForecastService>) {
+        let name = service.which_service();
+        self.services.insert(name, service);
     }
 
-    pub fn add_service(&'a mut self, service: ForecastService<'a>) {
-        self.services.insert(service.to_string(), service);
-    }
-
-    pub fn change_key(&'a mut self, name: String, key: String) {
-        let Some(service) = self.services.get_mut(&name) else {
+    pub fn change_key(&mut self, service: ForecastService, key: String) {
+        let Some(service) = self.services.get_mut(&service) else {
             return;
         };
         service.change_api_key(key);
     }
 
-    fn get_forecast() {}
-}
+    async fn get_forecast(
+        &self,
+        services: Vec<ForecastService>,
+        request: ForecastRequest,
+    ) -> HashMap<ForecastService, Option<WeatherForecast>> {
+        let available_services = &self.services;
 
-struct Service<T: WeatherForecastService> {
-    service: T,
-    available: bool,
+        stream::iter(services)
+            .map(|service| {
+                let req_clone = request.clone();
+                async move {
+                    if let Some(current_service) = available_services.get(&service) {
+                        let forecast = current_service.forecast(req_clone).await;
+                        Some((service, forecast))
+                    } else {
+                        None
+                    }
+                }
+            })
+            .buffer_unordered(10)
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .flatten()
+            .collect()
+    }
 }
 
 #[cfg(test)]

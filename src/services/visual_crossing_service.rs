@@ -89,6 +89,14 @@ impl<'a> WeatherForecastService for VisualCrossingService<'a> {
 
         Some(result)
     }
+
+    fn which_service(&self) -> ForecastService {
+        ForecastService::VisualCrossing
+    }
+
+    fn change_api_key(&mut self, key: String) {
+        self.api_key = key;
+    }
 }
 
 #[cfg(test)]

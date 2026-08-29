@@ -88,6 +88,12 @@ impl<'a> WeatherForecastService for OpenMeteoService<'a> {
 
         Some(result)
     }
+
+    fn which_service(&self) -> ForecastService {
+        ForecastService::OpenMeteo
+    }
+
+    fn change_api_key(&mut self, _: String) {}
 }
 
 #[cfg(test)]
