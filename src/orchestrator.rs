@@ -1,16 +1,9 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-    thread,
-};
+use std::collections::HashMap;
 
 use futures::{StreamExt, stream};
 use reqwest::Client;
 
-use crate::services::{
-    ForecastRequest, ForecastService, WeatherForecast, WeatherForecastService,
-    open_meteo_service::OpenMeteoService,
-};
+use crate::services::{ForecastRequest, ForecastService, WeatherForecast, WeatherForecastService};
 
 pub struct Orchestrator {
     services: HashMap<ForecastService, Box<dyn WeatherForecastService>>,
