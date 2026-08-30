@@ -50,18 +50,20 @@ struct Hourly {
     apparent_temperature: Vec<f32>,
 }
 
-pub struct OpenMeteoService<'a> {
-    pub client: &'a Client,
-}
+pub struct OpenMeteoService;
 
-impl<'a> OpenMeteoService<'a> {
-    pub fn new(client: &'a Client) -> Self {
-        Self { client }
+impl OpenMeteoService {
+    pub fn new() -> Self {
+        Self
     }
 
-    async fn send_request(&self, forecast_request: ForecastRequest) -> Option<reqwest::Response> {
+    async fn send_request(
+        &self,
+        client: &Client,
+        forecast_request: ForecastRequest,
+    ) -> Option<reqwest::Response> {
         let forecast_parameters = ForecastParamaters::from_forecast_request(forecast_request);
-        self.client
+        client
             .get(BASE_URL)
             .query(&forecast_parameters)
             .send()
@@ -71,9 +73,9 @@ impl<'a> OpenMeteoService<'a> {
 }
 
 #[async_trait::async_trait]
-impl<'a> WeatherForecastService for OpenMeteoService<'a> {
-    async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast> {
-        let api_response = self.send_request(request).await?;
+impl WeatherForecastService for OpenMeteoService {
+    async fn forecast(&self, client: &Client, request: ForecastRequest) -> Option<WeatherForecast> {
+        let api_response = self.send_request(client, request).await?;
         let json = api_response.json::<OpenMeteoResponse>().await.ok()?;
         let mut result = WeatherForecast::new();
 
@@ -117,8 +119,8 @@ mod tests {
         let location = Location::new(52.52, 13.41);
         let parameters = ForecastRequest::new(location, 1, None, None, None);
         let client = Client::new();
-        let open_meteo_service = OpenMeteoService::new(&client);
-        let result = open_meteo_service.forecast(parameters).await;
+        let open_meteo_service = OpenMeteoService::new();
+        let result = open_meteo_service.forecast(&client, parameters).await;
         assert!(result.is_some());
     }
 }

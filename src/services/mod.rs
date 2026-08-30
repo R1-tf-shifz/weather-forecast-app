@@ -1,10 +1,11 @@
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
 pub mod open_meteo_service;
 pub mod visual_crossing_service;
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Debug)]
 pub enum ForecastService {
     VisualCrossing,
     OpenMeteo,
@@ -117,7 +118,7 @@ impl fmt::Display for WindUnit {
 
 #[async_trait::async_trait]
 pub trait WeatherForecastService {
-    async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast>;
+    async fn forecast(&self, client: &Client, request: ForecastRequest) -> Option<WeatherForecast>;
 
     fn which_service(&self) -> ForecastService;
 

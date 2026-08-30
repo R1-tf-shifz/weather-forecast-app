@@ -1,7 +1,6 @@
 use super::*;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::env;
 
 const BASE_URL: &str =
     "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
@@ -41,19 +40,19 @@ struct Day {
 
 #[derive(Deserialize, Serialize)]
 struct Hour {
-    pub datetimeEpoch: u64,
+    #[serde(rename = "datetimeEpoch")]
+    pub datetime_epoch: u64,
     pub temp: f32,
     pub feelslike: f32,
 }
 
-pub struct VisualCrossingService<'a> {
-    pub client: &'a Client,
+pub struct VisualCrossingService {
     pub api_key: String,
 }
 
-impl<'a> VisualCrossingService<'a> {
-    pub fn new(client: &'a Client, api_key: String) -> Self {
-        Self { client, api_key }
+impl VisualCrossingService {
+    pub fn new(api_key: String) -> Self {
+        Self { api_key }
     }
 
     fn build_url(request: &ForecastRequest) -> String {
@@ -64,25 +63,29 @@ impl<'a> VisualCrossingService<'a> {
         )
     }
 
-    async fn send_request(&self, mut request: ForecastRequest) -> Option<reqwest::Response> {
+    async fn send_request(
+        &self,
+        client: &Client,
+        mut request: ForecastRequest,
+    ) -> Option<reqwest::Response> {
         let url = VisualCrossingService::build_url(&request);
         request.api_key = Some(self.api_key.clone());
         let parameters = ForecastParameters::from_forecast_request(request);
-        self.client.get(url).query(&parameters).send().await.ok()
+        client.get(url).query(&parameters).send().await.ok()
     }
 }
 
 #[async_trait::async_trait]
-impl<'a> WeatherForecastService for VisualCrossingService<'a> {
-    async fn forecast(&self, request: ForecastRequest) -> Option<WeatherForecast> {
-        let api_response = self.send_request(request).await?;
+impl WeatherForecastService for VisualCrossingService {
+    async fn forecast(&self, client: &Client, request: ForecastRequest) -> Option<WeatherForecast> {
+        let api_response = self.send_request(client, request).await?;
         let json = api_response.json::<VisualCrossingResponse>().await.ok()?;
         let mut result = WeatherForecast::new();
 
         for day in json.days.into_iter() {
             for hour in day.hours.into_iter() {
                 let weather_point =
-                    WeatherPoint::new(hour.datetimeEpoch, hour.temp, hour.feelslike);
+                    WeatherPoint::new(hour.datetime_epoch, hour.temp, hour.feelslike);
                 result.push(weather_point);
             }
         }
@@ -102,7 +105,7 @@ impl<'a> WeatherForecastService for VisualCrossingService<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use std::env;
     #[test]
     fn check_base_url_builder() {
         let location = Location::new(55.7558, 37.6173);
@@ -136,8 +139,8 @@ mod tests {
         let api_key = env::var("VISUAL_CROSSING_API_KEY").expect("key must be in env");
         let request = ForecastRequest::new(location, 1, None, None, None);
         let client = Client::new();
-        let visual_crossing_service = VisualCrossingService::new(&client, api_key);
-        let result = visual_crossing_service.forecast(request).await;
+        let visual_crossing_service = VisualCrossingService::new(api_key);
+        let result = visual_crossing_service.forecast(&client, request).await;
         assert!(result.is_some());
     }
 }
