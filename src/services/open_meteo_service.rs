@@ -52,6 +52,12 @@ struct Hourly {
 
 pub struct OpenMeteoService;
 
+impl Default for OpenMeteoService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OpenMeteoService {
     pub fn new() -> Self {
         Self

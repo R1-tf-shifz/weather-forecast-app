@@ -16,13 +16,13 @@ struct ForecastParameters {
 
 impl ForecastParameters {
     fn from_forecast_request(request: ForecastRequest) -> Self {
-        let unitGroup = match request.temperature_unit.unwrap_or_default() {
+        let unit_group = match request.temperature_unit.unwrap_or_default() {
             TemperatureUnit::Celsius => "metric",
             TemperatureUnit::Fahrenheit => "us",
         };
         ForecastParameters {
             key: request.api_key.expect("key must be configured"),
-            unit_group: unitGroup.to_string(),
+            unit_group: unit_group.to_string(),
             include: DEFAULT_INCLUDE.to_string(),
         }
     }

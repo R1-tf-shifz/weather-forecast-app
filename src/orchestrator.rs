@@ -10,6 +10,12 @@ pub struct Orchestrator {
     client: Client,
 }
 
+impl Default for Orchestrator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Orchestrator {
     pub fn new() -> Self {
         let client = Client::new();
@@ -26,6 +32,7 @@ impl Orchestrator {
         let Some(service) = self.services.get_mut(&service) else {
             return;
         };
+
         service.change_api_key(key);
     }
 
