@@ -29,6 +29,13 @@ pub struct ForecastRequest {
     pub wind_speed_unit: Option<WindUnit>,
 }
 
+impl Default for ForecastRequest {
+    fn default() -> Self {
+        let loc = Location::new(50.0, 50.0);
+        ForecastRequest::new(loc, 3, None, None)
+    }
+}
+
 impl ForecastRequest {
     pub fn new(
         location: Location,
