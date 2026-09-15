@@ -38,8 +38,8 @@ impl ForecastParamaters {
 
 #[derive(Deserialize, Debug)]
 struct OpenMeteoResponse {
-    utc_offset_seconds: i32,
-    timezone: String,
+    //utc_offset_seconds: i32,
+    //timezone: String,
     hourly: Hourly,
 }
 
@@ -112,7 +112,7 @@ mod tests {
     fn check_final_url() {
         let test_url = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&temperature_unit=celsius&wind_speed_unit=ms&hourly=temperature_2m%2Capparent_temperature&timeformat=unixtime&timezone=auto";
         let location = Location::new(52.52, 13.41);
-        let parameters = ForecastRequest::new(location, 1, None, None, None);
+        let parameters = ForecastRequest::new(location, 1, None, None);
         let parameters = ForecastParamaters::from_forecast_request(parameters);
         let client = Client::new();
         let final_url = client.get(BASE_URL).query(&parameters).build().unwrap();
@@ -123,7 +123,7 @@ mod tests {
     #[ignore]
     async fn is_api_works() {
         let location = Location::new(52.52, 13.41);
-        let parameters = ForecastRequest::new(location, 1, None, None, None);
+        let parameters = ForecastRequest::new(location, 1, None, None);
         let client = Client::new();
         let open_meteo_service = OpenMeteoService::new();
         let result = open_meteo_service.forecast(&client, parameters).await;

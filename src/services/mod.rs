@@ -5,7 +5,7 @@ use std::fmt;
 pub mod open_meteo_service;
 pub mod visual_crossing_service;
 
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Eq, Hash, PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub enum ForecastService {
     VisualCrossing,
     OpenMeteo,
@@ -25,7 +25,6 @@ impl fmt::Display for ForecastService {
 pub struct ForecastRequest {
     pub location: Location,
     pub forecast_days: u8,
-    pub api_key: Option<String>,
     pub temperature_unit: Option<TemperatureUnit>,
     pub wind_speed_unit: Option<WindUnit>,
 }
@@ -34,14 +33,12 @@ impl ForecastRequest {
     pub fn new(
         location: Location,
         forecast_days: u8,
-        api_key: Option<String>,
         temperature_unit: Option<TemperatureUnit>,
         wind_speed_unit: Option<WindUnit>,
     ) -> Self {
         Self {
             location,
             forecast_days,
-            api_key,
             temperature_unit,
             wind_speed_unit,
         }
@@ -50,7 +47,7 @@ impl ForecastRequest {
 
 pub type WeatherForecast = Vec<WeatherPoint>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct WeatherPoint {
     pub timestamp: u64,
     pub temperature: f32,

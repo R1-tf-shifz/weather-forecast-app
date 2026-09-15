@@ -2,8 +2,22 @@ use std::collections::HashMap;
 
 use futures::{StreamExt, stream};
 use reqwest::Client;
+use thiserror::Error;
 
-use crate::services::{ForecastRequest, ForecastService, WeatherForecast, WeatherForecastService};
+use crate::services::{
+    ForecastRequest, ForecastService, WeatherForecast, WeatherForecastService,
+    open_meteo_service::OpenMeteoService, visual_crossing_service::VisualCrossingService,
+};
+
+#[derive(Error, Debug)]
+pub enum OrchestratorError {
+    #[error("Api key required for creating this service {0}")]
+    ApiKeyRequired(ForecastService),
+    #[error("Service {0} already created. Value updated")]
+    ServiceAlreadyExists(ForecastService),
+    #[error("No such service: {0}. You need to add service to update key")]
+    NoSuchService(ForecastService),
+}
 
 pub struct Orchestrator {
     services: HashMap<ForecastService, Box<dyn WeatherForecastService>>,
@@ -23,20 +37,54 @@ impl Orchestrator {
         Self { client, services }
     }
 
-    pub fn add_service(&mut self, service: Box<dyn WeatherForecastService>) {
-        let name = service.which_service();
-        self.services.insert(name, service);
+    //pub fn add_service(&mut self, service: Box<dyn WeatherForecastService>) {
+    //    let name = service.which_service();
+    //    self.services.insert(name, service);
+    //                Ok(Box::new(VisualCrossingService::new(api_key.unwrap())))
+    //            }
+    //}
+
+    pub fn add_service(
+        &mut self,
+        service: ForecastService,
+        api_key: Option<String>,
+    ) -> Result<(), OrchestratorError> {
+        let new_service: Box<dyn WeatherForecastService> = match service {
+            ForecastService::OpenMeteo => {
+                let service = OpenMeteoService::new();
+                Box::new(service) as Box<dyn WeatherForecastService>
+            }
+            ForecastService::VisualCrossing => {
+                if api_key.is_none() {
+                    return Err(OrchestratorError::ApiKeyRequired(
+                        ForecastService::VisualCrossing,
+                    ));
+                }
+                let service = VisualCrossingService::new(api_key.unwrap());
+                Box::new(service) as Box<dyn WeatherForecastService>
+            }
+        };
+
+        if self.services.insert(service.clone(), new_service).is_some() {
+            return Err(OrchestratorError::ServiceAlreadyExists(service));
+        }
+        Ok(())
     }
 
-    pub fn change_key(&mut self, service: ForecastService, key: String) {
+    pub fn change_api_key(
+        &mut self,
+        service: ForecastService,
+        key: String,
+    ) -> Result<(), OrchestratorError> {
         let Some(service) = self.services.get_mut(&service) else {
-            return;
+            return Err(OrchestratorError::NoSuchService(service));
         };
 
         service.change_api_key(key);
+        Ok(())
     }
 
-    async fn get_forecast(
+    pub async fn get_forecast(
         &self,
         services: Vec<ForecastService>,
         request: ForecastRequest,
@@ -67,16 +115,15 @@ impl Orchestrator {
 
 #[cfg(test)]
 mod tests {
-    use crate::services::{Location, visual_crossing_service::VisualCrossingService};
+    use crate::services::Location;
 
     use super::*;
     use std::env;
 
     fn create_orchestrator_with_service(api_key: String) -> Orchestrator {
         let mut orch = Orchestrator::new();
-        let service = VisualCrossingService::new(api_key);
-        let service = Box::new(service);
-        orch.add_service(service);
+        orch.add_service(ForecastService::VisualCrossing, Some(api_key))
+            .expect("must work");
         orch
     }
 
@@ -94,7 +141,7 @@ mod tests {
         let orch = create_orchestrator_with_service(api_key);
         let services = vec![ForecastService::VisualCrossing];
         let location = Location::new(55.7558, 37.6173);
-        let request = ForecastRequest::new(location, 1, None, None, None);
+        let request = ForecastRequest::new(location, 1, None, None);
         let forecast = orch.get_forecast(services, request).await;
         println!("forecast: {:?}", forecast);
         let final_forecast = forecast.get(&ForecastService::VisualCrossing);
