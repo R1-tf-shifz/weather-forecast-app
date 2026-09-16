@@ -2,6 +2,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+const IP_API_URL: &str = "http://ip-api.com/json/?fields=status,lat,lon";
+
 pub mod open_meteo_service;
 pub mod visual_crossing_service;
 
@@ -50,6 +52,21 @@ impl ForecastRequest {
             wind_speed_unit,
         }
     }
+
+    pub async fn with_ip_api_location(
+        forecast_days: u8,
+        temperature_unit: Option<TemperatureUnit>,
+        wind_speed_unit: Option<WindUnit>,
+        client: &Client,
+    ) -> Option<Self> {
+        let location = Location::ip_api_location(client).await?;
+        Some(Self::new(
+            location,
+            forecast_days,
+            temperature_unit,
+            wind_speed_unit,
+        ))
+    }
 }
 
 pub type WeatherForecast = Vec<WeatherPoint>;
@@ -84,6 +101,31 @@ impl Location {
             longitude,
         }
     }
+
+    pub async fn ip_api_location(client: &Client) -> Option<Self> {
+        #[derive(Serialize, Deserialize)]
+        struct ApiResponse {
+            status: String,
+            lat: f32,
+            lon: f32,
+        }
+
+        let response = client.get(IP_API_URL).send().await.ok()?;
+        let json = response.json::<ApiResponse>().await.ok()?;
+        if json.status == "success" {
+            Some(Location::new(json.lat, json.lon))
+        } else {
+            None
+        }
+    }
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_ip_api_location() {
+    let client = Client::new();
+    let result = Location::ip_api_location(&client).await;
+    assert!(result.is_some())
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
