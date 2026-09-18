@@ -45,13 +45,6 @@ impl Orchestrator {
         }
     }
 
-    //pub fn add_service(&mut self, service: Box<dyn WeatherForecastService>) {
-    //    let name = service.which_service();
-    //    self.services.insert(name, service);
-    //                Ok(Box::new(VisualCrossingService::new(api_key.unwrap())))
-    //            }
-    //}
-
     pub fn add_service(
         &mut self,
         service: ForecastService,
