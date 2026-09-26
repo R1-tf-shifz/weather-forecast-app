@@ -3,7 +3,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 const BASE_URL: &str = "https://api.open-meteo.com/v1/forecast";
-const HOUR_FORMAT_PARAMETER: &str = "temperature_2m,apparent_temperature";
+const HOUR_FORMAT_PARAMETER: &str = "temperature_2m,apparent_temperature,weather_code";
 const DEFAULT_TIME_FORMAT: &str = "unixtime";
 const DEFAULT_TIME_ZONE: &str = "auto";
 
@@ -48,6 +48,7 @@ struct Hourly {
     time: Vec<u64>, //unix timestamp
     temperature_2m: Vec<f32>,
     apparent_temperature: Vec<f32>,
+    weather_code: Vec<i32>,
 }
 
 pub struct OpenMeteoService;
@@ -83,13 +84,15 @@ impl WeatherForecastService for OpenMeteoService {
     async fn forecast(&self, client: &Client, request: ForecastRequest) -> Option<WeatherForecast> {
         let api_response = self.send_request(client, request).await?;
         let json = api_response.json::<OpenMeteoResponse>().await.ok()?;
+        let json = json.hourly;
         let mut result = WeatherForecast::new();
 
-        for (id, time) in json.hourly.time.into_iter().enumerate() {
+        for (id, time) in json.time.into_iter().enumerate() {
             let point = WeatherPoint::new(
                 time,
-                json.hourly.temperature_2m[id],
-                json.hourly.apparent_temperature[id],
+                json.temperature_2m[id],
+                json.apparent_temperature[id],
+                Some(Wmo::from_i32(json.weather_code[id])),
             );
             result.push(point);
         }
@@ -110,7 +113,7 @@ mod tests {
 
     #[test]
     fn check_final_url() {
-        let test_url = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&temperature_unit=celsius&wind_speed_unit=ms&hourly=temperature_2m%2Capparent_temperature&timeformat=unixtime&timezone=auto";
+        let test_url = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&temperature_unit=celsius&wind_speed_unit=ms&hourly=temperature_2m%2Capparent_temperature%2Cweather_code&timeformat=unixtime&timezone=auto";
         let location = Location::new(52.52, 13.41);
         let parameters = ForecastRequest::new(location, 1, None, None);
         let parameters = ForecastParamaters::from_forecast_request(parameters);

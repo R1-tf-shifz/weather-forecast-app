@@ -72,18 +72,58 @@ impl ForecastRequest {
 pub type WeatherForecast = Vec<WeatherPoint>;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub enum Wmo {
+    //wmo codes
+    NoPrecipitation,
+    Drizzle,
+    Rain,
+    Snow,
+    RainShower,
+    SnowShower,
+    ThunderStorm,
+}
+
+impl Wmo {
+    fn from_i32(code: i32) -> Self {
+        match code {
+            0..10 => Self::NoPrecipitation,
+            50..=59 => Self::Drizzle,
+            60..=69 => Self::Rain,
+            70..=79 => Self::Snow,
+            80..=82 => Self::RainShower,
+            85..86 => Self::SnowShower,
+            95..100 => Self::ThunderStorm,
+            _ => Self::default(),
+        }
+    }
+}
+
+impl Default for Wmo {
+    fn default() -> Self {
+        Self::NoPrecipitation
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct WeatherPoint {
     pub timestamp: u64,
     pub temperature: f32,
     pub relative_temperature: f32,
+    pub weather_code: Option<Wmo>,
 }
 
 impl WeatherPoint {
-    pub fn new(timestamp: u64, temperature: f32, relative_temperature: f32) -> Self {
+    pub fn new(
+        timestamp: u64,
+        temperature: f32,
+        relative_temperature: f32,
+        weather_code: Option<Wmo>,
+    ) -> Self {
         Self {
             timestamp,
             temperature,
             relative_temperature,
+            weather_code,
         }
     }
 }

@@ -84,7 +84,7 @@ impl WeatherForecastService for VisualCrossingService {
         for day in json.days.into_iter() {
             for hour in day.hours.into_iter() {
                 let weather_point =
-                    WeatherPoint::new(hour.datetime_epoch, hour.temp, hour.feelslike);
+                    WeatherPoint::new(hour.datetime_epoch, hour.temp, hour.feelslike, None);
                 result.push(weather_point);
             }
         }
