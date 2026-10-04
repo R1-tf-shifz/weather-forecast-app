@@ -71,11 +71,11 @@ impl ForecastRequest {
 
 pub type WeatherForecast = Vec<WeatherPoint>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 pub enum Wmo {
     //wmo codes
+    #[default]
     NoPrecipitation,
-    Drizzle,
     Rain,
     Snow,
     RainShower,
@@ -87,7 +87,6 @@ impl Wmo {
     fn from_i32(code: i32) -> Self {
         match code {
             0..10 => Self::NoPrecipitation,
-            50..=59 => Self::Drizzle,
             60..=69 => Self::Rain,
             70..=79 => Self::Snow,
             80..=82 => Self::RainShower,
@@ -95,12 +94,6 @@ impl Wmo {
             95..100 => Self::ThunderStorm,
             _ => Self::default(),
         }
-    }
-}
-
-impl Default for Wmo {
-    fn default() -> Self {
-        Self::NoPrecipitation
     }
 }
 
