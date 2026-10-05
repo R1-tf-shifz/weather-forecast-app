@@ -78,9 +78,8 @@ pub enum Wmo {
     NoPrecipitation,
     Rain,
     Snow,
-    RainShower,
-    SnowShower,
     ThunderStorm,
+    Fallback,
 }
 
 impl Wmo {
@@ -89,11 +88,22 @@ impl Wmo {
             0..10 => Self::NoPrecipitation,
             60..=69 => Self::Rain,
             70..=79 => Self::Snow,
-            80..=82 => Self::RainShower,
-            85..86 => Self::SnowShower,
             95..100 => Self::ThunderStorm,
-            _ => Self::default(),
+            _ => Self::Fallback,
         }
+    }
+}
+
+impl fmt::Display for Wmo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let result = match self {
+            Self::NoPrecipitation => "sun",
+            Self::Rain => "rain",
+            Self::Snow => "snow",
+            Self::ThunderStorm => "thunderstorm",
+            Self::Fallback => "fallback",
+        };
+        write!(f, "{result}")
     }
 }
 
