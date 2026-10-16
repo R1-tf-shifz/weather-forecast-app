@@ -23,7 +23,7 @@ impl fmt::Display for ForecastService {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct ForecastRequest {
     pub location: Location,
     pub forecast_days: u8,
@@ -131,7 +131,7 @@ impl WeatherPoint {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct Location {
     pub latitude: f32,
     pub longitude: f32,
@@ -171,7 +171,7 @@ async fn test_ip_api_location() {
     assert!(result.is_some())
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Default, Clone)]
 pub enum TemperatureUnit {
     Fahrenheit,
     #[default]
@@ -188,7 +188,7 @@ impl fmt::Display for TemperatureUnit {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Default, Clone)]
 pub enum WindUnit {
     #[default]
     Ms,
