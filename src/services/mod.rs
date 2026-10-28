@@ -112,6 +112,10 @@ pub struct WeatherPoint {
     pub timestamp: u64,
     pub temperature: f32,
     pub relative_temperature: f32,
+    pub cloud_cover: i32,
+    pub wind_speed: f32,
+    pub humidity: i32,
+    pub precipitation: f32,
     pub weather_code: Option<Wmo>,
 }
 
@@ -121,12 +125,20 @@ impl WeatherPoint {
         temperature: f32,
         relative_temperature: f32,
         weather_code: Option<Wmo>,
+        cloud_cover: i32,
+        wind_speed: f32,
+        humidity: i32,
+        precipitation: f32,
     ) -> Self {
         Self {
             timestamp,
             temperature,
             relative_temperature,
             weather_code,
+            cloud_cover,
+            wind_speed,
+            humidity,
+            precipitation,
         }
     }
 }
@@ -185,6 +197,16 @@ impl fmt::Display for TemperatureUnit {
             TemperatureUnit::Celsius => String::from("celsius"),
         };
         write!(f, "{result}")
+    }
+}
+
+impl TemperatureUnit {
+    pub fn from_tempretature_unit_str(str: &str) -> Option<Self> {
+        match str {
+            "fahrenheit" => Some(Self::Fahrenheit),
+            "celsius" => Some(Self::Celsius),
+            _ => None,
+        }
     }
 }
 

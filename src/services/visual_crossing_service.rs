@@ -44,6 +44,10 @@ struct Hour {
     pub datetime_epoch: u64,
     pub temp: f32,
     pub feelslike: f32,
+    pub cloudcover: f32,
+    pub windspeed: f32,
+    pub humidity: f32,
+    pub precip: f32,
 }
 
 pub struct VisualCrossingService {
@@ -83,8 +87,16 @@ impl WeatherForecastService for VisualCrossingService {
 
         for day in json.days.into_iter() {
             for hour in day.hours.into_iter() {
-                let weather_point =
-                    WeatherPoint::new(hour.datetime_epoch, hour.temp, hour.feelslike, None);
+                let weather_point = WeatherPoint::new(
+                    hour.datetime_epoch,
+                    hour.temp,
+                    hour.feelslike,
+                    None,
+                    hour.cloudcover as i32,
+                    hour.windspeed,
+                    hour.humidity as i32,
+                    hour.precip,
+                );
                 result.push(weather_point);
             }
         }

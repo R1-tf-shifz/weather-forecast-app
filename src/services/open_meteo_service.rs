@@ -3,7 +3,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 const BASE_URL: &str = "https://api.open-meteo.com/v1/forecast";
-const HOUR_FORMAT_PARAMETER: &str = "temperature_2m,apparent_temperature,weather_code";
+const DEFAULT_HOUR_FORMAT_PARAMETER: &str = "temperature_2m,apparent_temperature,weather_code,cloud_cover,precipitation,wind_speed_10m,relative_humidity_2m";
 const DEFAULT_TIME_FORMAT: &str = "unixtime";
 const DEFAULT_TIME_ZONE: &str = "auto";
 
@@ -27,7 +27,7 @@ impl ForecastParamaters {
             latitude: request.location.latitude,
             longitude: request.location.longitude,
             forecast_days: i32::from(request.forecast_days),
-            hourly: HOUR_FORMAT_PARAMETER.to_string(),
+            hourly: DEFAULT_HOUR_FORMAT_PARAMETER.to_string(),
             timeformat: DEFAULT_TIME_FORMAT.to_string(),
             timezone: DEFAULT_TIME_ZONE.to_string(),
             temperature_unit,
@@ -49,6 +49,10 @@ struct Hourly {
     temperature_2m: Vec<f32>,
     apparent_temperature: Vec<f32>,
     weather_code: Vec<i32>,
+    cloud_cover: Vec<i32>,
+    relative_humidity_2m: Vec<i32>,
+    wind_speed_10m: Vec<f32>,
+    precipitation: Vec<f32>,
 }
 
 pub struct OpenMeteoService;
@@ -93,6 +97,10 @@ impl WeatherForecastService for OpenMeteoService {
                 json.temperature_2m[id],
                 json.apparent_temperature[id],
                 Some(Wmo::from_i32(json.weather_code[id])),
+                json.cloud_cover[id],
+                json.wind_speed_10m[id],
+                json.relative_humidity_2m[id],
+                json.precipitation[id],
             );
             result.push(point);
         }
@@ -113,7 +121,7 @@ mod tests {
 
     #[test]
     fn check_final_url() {
-        let test_url = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&temperature_unit=celsius&wind_speed_unit=ms&hourly=temperature_2m%2Capparent_temperature%2Cweather_code&timeformat=unixtime&timezone=auto";
+        let test_url = "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&temperature_unit=celsius&wind_speed_unit=ms&hourly=temperature_2m%2Capparent_temperature%2Cweather_code%2Ccloud_cover%2Cprecipitation%2Cwind_speed_10m%2Crelative_humidity_2m&timeformat=unixtime&timezone=auto";
         let location = Location::new(52.52, 13.41);
         let parameters = ForecastRequest::new(location, 1, None, None);
         let parameters = ForecastParamaters::from_forecast_request(parameters);
